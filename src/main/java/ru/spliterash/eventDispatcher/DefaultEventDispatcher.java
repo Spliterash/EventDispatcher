@@ -4,7 +4,6 @@ import net.jodah.typetools.TypeResolver;
 import ru.spliterash.eventDispatcher.event.Event;
 import ru.spliterash.eventDispatcher.event.EventListener;
 
-import java.beans.EventHandler;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,7 +32,7 @@ public class DefaultEventDispatcher implements EventDispatcher {
 
     private <E extends Event> Class<E> getType(EventListener<E> handler) {
         //noinspection unchecked
-        return (Class<E>) TypeResolver.resolveRawArgument(EventHandler.class, handler.getClass());
+        return (Class<E>) TypeResolver.resolveRawArgument(EventListener.class, handler.getClass());
     }
 
     @Override
