@@ -49,11 +49,14 @@ public class DefaultEventDispatcher implements EventDispatcher {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
 
-        targetEventHandlers
-                .forEach(handler -> {
-                    //noinspection unchecked
-                    ((EventListener<E>) handler).onEvent(event);
-                });
+        for (EventListener<? extends Event> handler : targetEventHandlers) {
+            try {
+                //noinspection unchecked
+                ((EventListener<E>) handler).onEvent(event);
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
     }
 
     private <E extends Event> Set<Class<? super E>> getSuperEventClasses(Class<E> eventClass) {

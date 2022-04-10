@@ -1,7 +1,7 @@
 package ru.spliterash.eventDispatcher.event;
 
 public interface EventListener<E extends Event> {
-    void onEvent(E event);
+    void onEvent(E event) throws Exception;
 
     /**
      * Приоритет больше - получает после всех
