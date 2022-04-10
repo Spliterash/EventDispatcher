@@ -4,48 +4,60 @@ plugins {
     id "maven-publish"
 }
 
-group 'ru.spliterash'
-version '1.0.0'
+allprojects {
+    apply plugin: "java-library"
+    apply plugin: "io.freefair.lombok"
+    apply plugin: "maven-publish"
+
+    group 'ru.spliterash'
+    version '1.0.0'
 
 
-apply from: "https://gradle.spliterash.ru/maven-publish.gradle"
+    apply from: "https://gradle.spliterash.ru/maven-publish.gradle"
 
-repositories {
-    mavenCentral()
-    mavenLocal()
-}
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
 
-dependencies {
-    api 'net.jodah:typetools:0.6.3'
+    dependencies {
+        api 'net.jodah:typetools:0.6.3'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
-    testImplementation 'org.mockito:mockito-core:4.3.1'
-}
+        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+        testImplementation 'org.mockito:mockito-core:4.3.1'
+    }
 
-test {
-    useJUnitPlatform()
-}
+    test {
+        useJUnitPlatform()
+    }
 
-ext {
-    mavenArtifactId = "event-dispatcher"
-}
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                from components.java
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from components.java
-
-            repositories {
-                maven {
-                    name = "nexus"
-                    url = "https://nexus.spliterash.ru/repository/event-dispatcher"
-                    credentials {
-                        username = project.property("splitNexusUser") as String
-                        password = project.property("splitNexusPassword") as String
+                repositories {
+                    maven {
+                        name = "nexus"
+                        url = "https://nexus.spliterash.ru/repository/event-dispatcher"
+                        credentials {
+                            username = project.property("splitNexusUser") as String
+                            password = project.property("splitNexusPassword") as String
+                        }
                     }
                 }
             }
         }
     }
+
+}
+subprojects {
+    dependencies {
+        api rootProject
+    }
+}
+
+ext {
+    mavenArtifactId = "event-dispatcher"
 }
