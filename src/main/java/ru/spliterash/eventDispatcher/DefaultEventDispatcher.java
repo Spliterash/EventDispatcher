@@ -5,24 +5,26 @@ import net.jodah.typetools.TypeResolver;
 import ru.spliterash.eventDispatcher.event.Event;
 import ru.spliterash.eventDispatcher.event.EventListener;
 import ru.spliterash.eventDispatcher.event.RegisteredListener;
+import ru.spliterash.spcore.structure.spLinkedlist.SPLinkedList;
 
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class DefaultEventDispatcher implements EventDispatcher {
-    protected final Map<Class<? extends Event>, List<EventListener<? extends Event>>> handlers = new HashMap<>();
+    protected final Map<Class<? extends Event>, SPLinkedList<EventListener<? extends Event>>> handlers = new HashMap<>();
     protected final Lock lock = new ReentrantLock();
 
     @Override
     public <E extends Event> RegisteredListener registerListener(Class<E> eventType, EventListener<? super E> listener) {
         lock.lock();
         try {
-            List<EventListener<? extends Event>> registeredHandlersForEvent = handlers.computeIfAbsent(eventType, s -> new LinkedList<>());
-            registeredHandlersForEvent.add(listener);
+            SPLinkedList<EventListener<? extends Event>> registeredHandlersForEvent = handlers.computeIfAbsent(eventType, s -> new SPLinkedList<>());
+            SPLinkedList.LinkedListElement<EventListener<? extends Event>> link = registeredHandlersForEvent.add(listener);
 
-            return new DefaultRegisteredListener(eventType, registeredHandlersForEvent, listener);
+            return new DefaultRegisteredListener(eventType, link, registeredHandlersForEvent);
         } finally {
             lock.unlock();
         }
@@ -46,23 +48,21 @@ public class DefaultEventDispatcher implements EventDispatcher {
         try {
             //noinspection unchecked
             Class<E> eventClass = (Class<E>) event.getClass();
-
             //noinspection SuspiciousMethodCalls
-            Set<EventListener<? extends Event>> targetEventHandlers = getSuperEventClasses(eventClass)
+            getSuperEventClasses(eventClass)
                     .stream()
                     .map(handlers::get)
                     .filter(Objects::nonNull)
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toSet());
-
-            for (EventListener<? extends Event> handler : targetEventHandlers) {
-                try {
-                    //noinspection unchecked
-                    ((EventListener<E>) handler).onEvent(event);
-                } catch (Throwable t) {
-                    t.printStackTrace();
-                }
-            }
+                    .flatMap(s -> StreamSupport.stream(s.spliterator(), false))
+                    .sorted(Comparator.comparingInt(EventListener::priority))
+                    .forEachOrdered(eventListener -> {
+                        try {
+                            //noinspection unchecked
+                            ((EventListener<E>) eventListener).onEvent(event);
+                        } catch (Exception t) {
+                            t.printStackTrace();
+                        }
+                    });
         } finally {
             lock.unlock();
         }
@@ -93,16 +93,15 @@ public class DefaultEventDispatcher implements EventDispatcher {
     @RequiredArgsConstructor
     private final class DefaultRegisteredListener implements RegisteredListener {
         private final Class<? extends Event> clazz;
-        private final List<EventListener<? extends Event>> anotherSameTypeListeners;
 
-        private final EventListener<?> listener;
+        private final SPLinkedList.LinkedListElement<?> link;
+        private final SPLinkedList<EventListener<? extends Event>> anotherSameTypeListeners;
 
         @Override
         public void unregister() {
             lock.lock();
             try {
-                anotherSameTypeListeners.remove(listener);
-
+                link.remove();
                 if (anotherSameTypeListeners.isEmpty())
                     handlers.remove(clazz);
             } finally {

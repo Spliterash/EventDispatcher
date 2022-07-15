@@ -22,10 +22,16 @@ allprojects {
     repositories {
         mavenCentral()
         mavenLocal()
+
+        maven {
+            url = "https://nexus.spliterash.ru/repository/group/"
+        }
     }
 
     dependencies {
         api 'net.jodah:typetools:0.6.3'
+        implementation 'ru.spliterash:spcore-structures-linked-list:1.0.0-SNAPSHOT'
+
 
         testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
         testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
