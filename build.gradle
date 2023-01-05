@@ -1,6 +1,6 @@
 plugins {
     id 'java-library'
-    id "io.freefair.lombok" version "5.1.1"
+    id "io.freefair.lombok" version "6.6.1"
     id "maven-publish"
 }
 
@@ -16,21 +16,18 @@ allprojects {
         sourceCompatibility = '1.8'
         targetCompatibility = '1.8'
     }
-
-    apply from: "https://gradle.spliterash.ru/maven-publish.gradle"
-
     repositories {
         mavenCentral()
         mavenLocal()
 
         maven {
-            url = "https://nexus.spliterash.ru/repository/group/"
+            url = "https://repo.spliterash.ru/group/"
         }
     }
 
     dependencies {
         api 'net.jodah:typetools:0.6.3'
-        implementation 'ru.spliterash:spcore-structures-linked-list:1.0.0-SNAPSHOT'
+        implementation 'ru.spliterash:spcore-structures-linked-list:1.0.5'
 
 
         testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
@@ -47,15 +44,16 @@ allprojects {
             maven(MavenPublication) {
                 from components.java
 
-                repositories {
-                    maven {
-                        name = "nexus"
-                        url = "https://nexus.spliterash.ru/repository/event-dispatcher"
-                        credentials {
-                            username = project.property("splitNexusUser") as String
-                            password = project.property("splitNexusPassword") as String
-                        }
-                    }
+                artifactId = "event-dispatcher" + (project == rootProject ? "" : project.path.replace(":", "-"))
+            }
+        }
+        repositories {
+            maven {
+                name = "nexus"
+                url = "https://repo.spliterash.ru/event-dispatcher"
+                credentials {
+                    username = project.property("SPLITERASH_NEXUS_USR") as String
+                    password = project.property("SPLITERASH_NEXUS_PSW") as String
                 }
             }
         }
@@ -66,8 +64,4 @@ subprojects {
     dependencies {
         api rootProject
     }
-}
-
-ext {
-    mavenArtifactId = "event-dispatcher"
 }
